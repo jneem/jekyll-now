@@ -1018,8 +1018,8 @@ patches has a (unique) perfect merge, and we can compute it easily. But
 there's an obvious flaw: all the tools that we use (editors, compilers, etc.)
 work on files, not dagles. This is where the
 [paper](https://arxiv.org/abs/1311.3903) leaves us, but there is an easy solution:
-whenever a merge results in something that isn't a file, the VCS just
-asks you to supply a new patch that results in a file. We'll call it a *filification*,
+whenever a merge results in something that isn't a file, just make
+a new patch that turns it into a file. We'll call this *flattening*,
 and here's an example:
 
 ```tikz
@@ -1043,7 +1043,7 @@ PARENT 1 POS 2/1 * shoes
 PARENT 1 POS 2/2 * garbage
 PARENT 2/3 POS 3/1 * work
 
-FILE (150, 0) filification
+FILE (150, 0) flattened
 to-do
 * shoes
 * garbage
@@ -1067,18 +1067,15 @@ d3 e3
 d4 e4
 ```
 
-Since the VCS will request a filification whenever a merge results in a dagle,
-your editor and compiler will only ever see files!
-
 ## But how is that new?
 
-If your eyes haven't glazed over by now, you might be feeling a bit cheated:
-I promised you a new framework that avoids the pitfalls of manual merge
-resolution, but filification looks an awful lot like manual merge resolution.
-I'll answer this criticism in more detail in the next post, where I demonstrate
-the `pijul` tool and how it differs from `git`. But here's a little teaser: the
-difference between filification and manual merge resolution is that
-filification is completely transparent to the VCS: it's just a patch like any
-other. That means we can do fun things, like re-ordering or reverting patches,
-even in the presence of conflicting merges.
-But more on that in the next post.
+If your eyes haven't glazed over by now (sorry, it's been a long post), you
+might be feeling a bit cheated: I promised you a new framework that avoids the
+pitfalls of manual merge resolution, but flattening looks an awful lot like
+manual merge resolution. I'll answer this criticism in more detail in the next
+post, where I demonstrate the `pijul` tool and how it differs from `git`. But
+here's a little teaser: the difference between flattening and manual merge
+resolution is that flattening is completely transparent to the VCS: it's just
+a patch like any other. That means we can do fun things, like re-ordering or
+reverting patches, even in the presence of conflicting merges. But more on that
+in the next post.
