@@ -1,4 +1,9 @@
-# Introduction
+---
+layout: post
+title: Pijul
+---
+
+# This is a draft!
 
 In the [last post](TODO), I talked about a mathematical framework for a version
 control system (VCS) without merge conflicts. In this post I'll explore
