@@ -162,7 +162,7 @@ def process_md(in_name, out_name):
             basename = os.path.splitext(os.path.basename(in_name))[0]
             for line in in_file.readlines():
                 if in_tikz_block and line.startswith('```'):
-                    svg_name = '{}_tikz_block_{}.svg'.format(basename, cur_block_num)
+                    svg_name = '../images/{}_tikz_block_{}.svg'.format(basename, cur_block_num)
                     tex_it(cur_lines, svg_name)
                     in_tikz_block = False
                     cur_block_num += 1
