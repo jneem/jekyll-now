@@ -1,6 +1,9 @@
-# This is a draft!
+---
+layout: post
+title: Merging and patches
+---
 
-# Introduction
+# This is a draft!
 
 A [recent paper](https://arxiv.org/abs/1311.3903) suggested a new mathematical
 point of view on version control. I first found out about it from `pijul`, a
