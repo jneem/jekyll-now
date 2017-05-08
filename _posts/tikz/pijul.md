@@ -5,9 +5,10 @@ title: Pijul
 
 # This is a draft!
 
-In the [last post](TODO), I talked about a mathematical framework for a version
+In the [last post](jneem.github.io/merging/), I talked about a
+mathematical framework for a version
 control system (VCS) without merge conflicts. In this post I'll explore
-[pijul](pijul.com), an implementation of such a system. Note that pijul
+[pijul](pijul.com), which is a VCS based on a similar system. Note that pijul
 is under heavy development; this post is based on a development snapshot
 (I almost called it a "git" snapshot by mistake), and might be out of
 date by the time you read it.
@@ -34,19 +35,19 @@ other VCSes.
   stop it.
 - `pijul fork` creates a new branch, like `git branch`. Unlike `git branch`,
   which creates a copy of the current branch, `pijul fork` creates a copy of
-  the master branch. (This seems like a strange default to me.)
+  the master branch. (This is a bug, apparently.)
 - `pijul apply` adds a patch to the current branch, like `git cherry-pick` or
   `hg merge`.
 
 # Dealing with conflicts
 
 As I explained in the last post, pijul differs from other VCSes by not having
-merge conflicts. Instead, it has (what I call) *dagles*, which are different
+merge conflicts. Instead, it has (what I call) *digles*, which are different
 from files in that their lines are only partially ordered (i.e. form a directed
-acyclic graph). The thing about dagles is that you can't really work with them
+acyclic graph). The thing about digles is that you can't really work with them
 (for example, by opening them in an editor), so pijul doesn't let you actually
-see the dagles: it stores them as dagles internally, but renders them as files
-for you to edit. As an example, we'll create a dagle by asking pijul to
+see the digles: it stores them as digles internally, but renders them as files
+for you to edit. As an example, we'll create a digle by asking pijul to
 perform the following merge:
 
 ```tikz
@@ -113,8 +114,9 @@ $ pijul apply <hash-of-shoes-change>
 ```
 
 The first thing to notice after running those commands is that pijul
-doesn't complain about any conflicts. I'm not actually sure that's
-a good decision, but we'll discuss that more later. Anyway, if you run
+doesn't complain about any conflicts (this is not intentional; it's
+a known issue).
+Anyway, if you run
 the above commands then the final, merged version of `todo.txt` will
 look like this:
 
@@ -131,16 +133,16 @@ to-do
 That's... a little disappointing, maybe, especially since pijul was supposed to
 free us from merge conflicts, and this looks a lot like a merge conflict. The
 point, though, is that pijul has to somehow produce a file -- one that the
-operating system and your editor can understand -- from the dagle that it maintains internally.
-The output format just happens to look a bit like what other VCSes output when
-they need you to resolve a merge conflict.
+operating system and your editor can understand -- from the digle that it
+maintains internally. The output format just happens to look a bit like what
+other VCSes output when they need you to resolve a merge conflict.
 
-As it stands, pijul doesn't have a way to actually see its internal dagles, so
+As it stands, pijul doesn't have a way to actually see its internal digles, so
 I hacked one in: [this](TODO) fork of pijul has a `pijul graphviz` command for
-outputting a dagle in a format to be rendered by graphviz. It's a total hack
+outputting a digle in a format to be rendered by graphviz. It's a total hack
 (for example, it doesn't even correctly escape quotation marks, so your file
 had better not have any), but in this case it's good enough to show that pijul
-produced the correct dagle after all:
+produced the correct digle after all:
 
 ```tikz
 DAGLE (100, 0) merged
@@ -152,13 +154,11 @@ PARENT 2/3 POS 3/1 * work
 
 ## What should I do with a conflict?
 
-Since pijul will happily work with dagles internally, you could in principle
+Since pijul will happily work with digles internally, you could in principle
 ignore a conflict and work on other things. That's probably a bad idea for
-several reasons (for starters, there are no good tools for working with dagles,
-and their presence will probably break your build). The authors of pijul
-explicitly decided to avoid imposing opinions on your workflow, since
-nobody has much experience with dagle-based VCSes. So here's an opinion from
-me: when you have a conflict, you should resolve it ASAP. I'll give more
+several reasons (for starters, there are no good tools for working with digles,
+and their presence will probably break your build). So here's my unsolicited
+opinion: when you have a conflict, you should resolve it ASAP. I'll give more
 reasons later.
 
 In the example above, all we need to do is remove the `>>>` and `<<<` lines
@@ -181,7 +181,7 @@ As an illustration of what pijul brings to the table, we'll look at
 a situation where pijul's conflict-avoidance saves the day (at least,
 compared to git; darcs also does ok here).
 We'll start with the example merge from before, including
-our manual dagle resolution:
+our manual digle resolution:
 
 ```tikz
 FILE (0, 0) original
@@ -293,20 +293,22 @@ reverting the patch by itself. I have to manually resolve the conflicting
 patches both when applying and reverting.
 
 I won't bore you with long command listings for other VCSes, but you can test
-them out yourself! I've tried mercurial (which does about the same as git here)
-and darcs (which does about the same as pijul).
+them out yourself! I've tried mercurial (which does about the same as git in
+this example) and darcs (which does about the same as pijul in this example).
+
+## `pijul unrecord` is a blunt instrument
 
 # Why you should resolve your conflicts
 
-One of the reasons that I came out against working with dagles above is that
-the way pijul renders dagles as files makes it difficult to do much with them
+One of the reasons that I came out against working with digles above is that
+the way pijul renders digles as files makes it difficult to do much with them
 (to be fair, I don't see how to do it any better). Here are a couple of issues
 that I found while playing with pijul.
 
 ## Pijul's file rendering is lossy
 
 The first problem is that information is lost in pijul's rendering.
-For example, here are two different dagles:
+For example, here are two different digles:
 
 ```tikz
 DAGLE (0, 0)
@@ -343,22 +345,22 @@ to-do
 <<<<<<<<<
 ```
 
-This is a perfectly good representation of the dagle on the right, but it loses
+This is a perfectly good representation of the digle on the right, but it loses
 information from the one on the left (such as the fact that both "home" lines
 are the same, and the fact that "shop" and "home" don't have a prescribed
-order. The good news here is that as long as your dagle came from merging two
+order. The good news here is that as long as your digle came from merging two
 *files*, then pijul's rendering is lossless. That means you can avoid the
-problem by flattening your dagles to files after every merge (i.e., by
+problem by flattening your digles to files after every merge (i.e., by
 resolving your merge conflicts immediately).
 
-## Pijul's dagle parsing is funky
+## Pijul's digle parsing is funky
 
 The second problem is that pijul's diffing algorithm doesn't interact perfectly
-with pijul's rendering algorithm. Say you edit a dagle (rendered by pijul as
-a file) to produce another file that pijul is supposed to interpret as a dagle.
+with pijul's rendering algorithm. Say you edit a digle (rendered by pijul as
+a file) to produce another file that pijul is supposed to interpret as a digle.
 If you try to record that change, you're relying on pijul to correctly
-interpret your modified file as a dagle. It isn't hard to come up with an
-example that doesn't work. Let's start with this dagle:
+interpret your modified file as a digle. It isn't hard to come up with an
+example that doesn't work. Let's start with this digle:
 
 ```tikz
 DAGLE (100, 0)
@@ -381,8 +383,8 @@ todo
 ```
 
 Now let's try swapping the shoes and garbage lines. If we were to swap the
-shoes and garbage lines in the dagle, we would end up with the exact same
-dagle. But what if we try swapping those lines in the file that pijul rendered?
+shoes and garbage lines in the digle, we would end up with the exact same
+digle. But what if we try swapping those lines in the file that pijul rendered?
 In that case, pijul interprets the result like this:
 
 ```tikz
@@ -395,11 +397,12 @@ PARENT 4 POS 4/2 * shoes
 ```
 
 That's right: pijul interpreted the `>>>>>>>>>` part (but not `<<<<<<<<<`) as
-a line of actual content!
-
-All in all, it's better to avoid working with dagles yourself; leave that to
+a line of actual content! This specific case is a [bug](TODO) in pijul, and
+so it might eventually be fixed. I'd still recommend against trying to edit
+digles in non-trivial ways;
+leave that to
 pijul's internals. Like [cockroaches](http://www.livescience.com/33995-cockroaches.html),
-dagles are important for the ecosystem as a whole, but you should still flatten them
+digles are important for the ecosystem as a whole, but you should still flatten them
 as soon as they appear.
 
 # Conclusion
@@ -417,8 +420,8 @@ besides git's huge head start, here are a few reasons:
 - Although pijul's guarantees (like the irrelevance of merge order) *could*
   have workflow benefits, it isn't clear what they are and how important they
   are.
-- "Dagle" is a terrible, terrible name. That's nothing to do with pijul as such;
-  I take full responsibility.
+- "Digle" is a terrible, terrible name. That's nothing to do with pijul as such,
+  which doesn't even have a user-visible name for directed graphs of lines.
 
 In the next post, I'll take a look at pijul's innards, focussing particularly on
 how it represents your precious data.

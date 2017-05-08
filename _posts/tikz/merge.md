@@ -132,7 +132,7 @@ to-do list:
 * put on shoes
 
 FILE (50, -30) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
@@ -237,12 +237,12 @@ to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * take out garbage
@@ -273,12 +273,12 @@ to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * put on shoes
@@ -306,7 +306,7 @@ to-do list:
 * put on shoes
 
 FILE (50, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * put on shoes
@@ -325,7 +325,7 @@ to-do list:
 * put on shoes
 
 FILE (50, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * put on shoes
@@ -383,12 +383,12 @@ to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * take out garbage
@@ -418,23 +418,23 @@ reasonable:
 
 ```tikz
 FILE (0, 0) original
-to-do list
+to-do list:
 
 FILE (50, 15) mine
-to-do list
+to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * take out garbage
 
 FILE (120, 15) merged1
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (120, -15) merged2
-to-do list
+to-do list:
 * take out garbage
 * put on shoes
 
@@ -532,12 +532,12 @@ to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * take out garbage
@@ -576,12 +576,12 @@ to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * take out garbage
@@ -615,19 +615,19 @@ to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * take out garbage
 * do the hokey pokey
 
 FILE (150, 0) future
-to-do list
+to-do list:
 * put on socks
 * put on shoes
 * take out garbage
@@ -661,18 +661,18 @@ of two lines in the merged file:
 
 ```tikz
 FILE (0, 0) original
-to-do list
+to-do list:
 
 FILE (50, 15) mine
-to-do list
+to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * take out garbage
 * put on shoes
 
@@ -690,23 +690,23 @@ no valid continuation: imagine that my wife and I manually created the desired m
 
 ```tikz
 FILE (0, 0) original
-to-do list
+to-do list:
 
 FILE (50, 15) mine
-to-do list
+to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * take out garbage
 
 FILE (100, 0) merged
-to-do list
+to-do list:
 * take out garbage
 * put on shoes
 
 FILE (150, 0) future
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
@@ -729,12 +729,12 @@ The only possibility is
 
 ```tikz
 FILE (100, 0) merged
-to-do list
+to-do list:
 * take out garbage
 * put on shoes
 
 FILE (150, 0) future
-to-do list
+to-do list:
 * put on shoes
 * take out garbage
 
@@ -785,14 +785,14 @@ we already saw an example:
 
 ```tikz
 FILE (0, 0) original
-to-do list
+to-do list:
 
 FILE (50, 15) mine
-to-do list
+to-do list:
 * put on shoes
 
 FILE (50, -15) wife's
-to-do list
+to-do list:
 * take out garbage
 
 EDGES
