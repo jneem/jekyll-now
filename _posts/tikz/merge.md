@@ -6,11 +6,11 @@ title: Merging and patches
 # This is a draft!
 
 A [recent paper](https://arxiv.org/abs/1311.3903) suggested a new mathematical
-point of view on version control. I first found out about it from `pijul`, a
-new version control system (VCS) based around those ideas. But if you poke
-around the `pijul` [home page](https://pijul.com/), you won't find many details
-about what makes it different from existing VCSes. So I did a bit of digging,
-and this series of blog posts is the result.
+point of view on version control. I first found out about it from `pijul`,
+a new version control system (VCS) that is loosely inspired by that paper. But
+if you poke around the `pijul` [home page](https://pijul.com/), you won't find
+many details about what makes it different from existing VCSes. So I did a bit
+of digging, and this series of blog posts is the result.
 
 In the first part (i.e. this one), I'll go over some of the theory developed in
 the paper. In particular, I'll describe a way to think about patches and
@@ -18,15 +18,25 @@ merging that is guaranteed to never, ever have a merge conflict. In the second
 part, I'll show how `pijul` puts that theory into action, and in the third part
 I'll dig into `pijul`'s implementation.
 
+Before getting into some patch theory, a quick caveat: any real VCS needs to
+deal with a lot of tedious details (directories, binary files, file renaming,
+etc.). In order to get straight to the interesting new ideas, I'll be skipping
+all that. For the purposes of these posts, a VCS only needs to keep track of
+a single file, which you should think of as a list of lines.
+
 # Patches
 
 A patch is the difference between two files. Later in this series we'll be
 looking at some wild new ideas, so let's start with something familiar and
-comforting. The kind of patches we'll discuss here are essentially unchanged
-since the early days of Unix:
+comforting. The kind of patches we'll discuss here go back to the early days of
+Unix:
 
 - a patch works line-by-line (as opposed to, for example, word-by-word); and
-- a patch can delete lines and add new lines, but not modify existing lines.
+- a patch can add new lines, but not modify existing lines.
+
+In order to actually have a useful VCS, you need to be able to delete lines
+also. But deleting lines turns out to add some complications, so we'll deal
+with them later.
 
 For an example, let's start with a simple file: my to-do list for this morning.
 
@@ -75,14 +85,14 @@ a1 b1
 a2 b3
 ```
 
-Hopefully it's self-explanatory, but just in case: lines that are on the right
-with no arrow coming out are the ones that got deleted. Lines on the left with
-no arrow coming in are the ones that got added. Otherwise, an arrow points from
-the original position of a line to its new position. Since patches aren't
-allowed to re-order the lines, they're guaranteed to always be non-crossing.
+Hopefully it's self-explanatory, but just in case: an arrow goes from left to
+right to indicate that the line on the right is the same as the one on the
+left. Lines on the right with no arrow coming in are the ones that got added.
+Since patches aren't allowed to re-order the lines, the lines are guaranteed
+not to cross.
 
 There's something implicit in our notation that really needs to be said out
-loud: for us, a patch is tied to a specific input file. This is the first point
+loud: for us, <b>a patch is tied to a specific input file</b>. This is the first point
 where we diverge from the classic Unix ways: the classic Unix patch that we
 produced using "diff" could in principle be applied to *any* input file, and it
 would still insert "* put on socks" after the first line. In many cases that
@@ -139,7 +149,7 @@ This brings us to merging: since I'd prefer to have my to-do list as a single
 file, I want to merge my wife's changes and my own. In this example, it's
 pretty obvious what the result should be, but let's look at the general problem
 of merging. We'll do this slowly and carefully, and our endpoint might be
-different from what you're used to (unless you're a `darcs` fan).
+different from what you're used to.
 
 ## Patch composition
 
@@ -186,7 +196,11 @@ to get the (dotted red) patch going from `O` to `B`.
 
 ## Merging as composition
 
-Let's define carefully what a merge is: if `p` and `q` are two different patches
+I'm going to define carefully what a merge is in terms of patch composition.
+I'll do this in a very math-professor kind of way: I'll give a precise
+definition, follows by some examples, and only afterwards will I explain
+why the definition makes sense.
+So here's the definition: if `p` and `q` are two different patches
 taking the file `O` to the files `A` and `B` respectively, a *merge* of `p` and `q`
 is a pair of patches `r` and `s` such that
 
@@ -209,7 +223,7 @@ EXTRA
 \draw[->] (b) -- node[below] {\tt s} ++ (m);
 ```
 
-Instead of saying that `pr = qs`, a mathematician (or, at least, one who likes
+Instead of saying that `pr = qs`, a mathematician (or anyone who wants
 to sound fancy) would say that the diagram above *commutes*.
 
 Here is an example of a merge:
@@ -252,30 +266,37 @@ And here is an example of something that is not a merge:
 
 ```tikz
 FILE (0, 0) original
-shopping list:
-* chocolate
+to-do list:
+* put on shoes
 
 FILE (50, 15) mine
-shopping list:
-* dark chocolate
+to-do list:
+* put on socks
+* put on shoes
 
 FILE (50, -15) wife's
-shopping list:
-* chocolate
-* chocolate
+to-do list
+* put on shoes
+* take out garbage
 
 FILE (100, 0) merged
-shopping list:
-* dark chocolate
-* chocolate
+to-do list
+* put on socks
+* put on shoes
+* put on shoes
+* take out garbage
 
 EDGES
 a1 b1
+a2 b3
 a1 c1
 a2 c2
 b1 d1
+b2 d2
+b3 d3
 c1 d1
-c2 d2
+c2 d4
+c3 d5
 ```
 
 This is not a merge because it fails the condition `pr = qs`: composing the
@@ -283,33 +304,38 @@ patches along the top path gives
 
 ```tikz
 FILE (0, 0) original
-shopping list:
-* chocolate
+to-do list:
+* put on shoes
 
 FILE (50, 0) merged
-shopping list:
-* dark chocolate
-* chocolate
+to-do list
+* put on socks
+* put on shoes
+* put on shoes
+* take out garbage
 
 EDGES
 a1 b1
+a2 b3
 ```
 
 but composing them along the bottom path gives
 
 ```tikz
 FILE (0, 0) original
-shopping list:
-* chocolate
+to-do list:
+* put on shoes
 
 FILE (50, 0) merged
-shopping list:
-* dark chocolate
-* chocolate
+to-do list
+* put on socks
+* put on shoes
+* put on shoes
+* take out garbage
 
 EDGES
 a1 b1
-a2 b3
+a2 b4
 ```
 
 Specifically, the two patches disagree on whether the chocolate in the merged
@@ -336,10 +362,17 @@ we'll find that there's a unique merge that satisfies all these properties
 
 # Merges aren't unique
 
+The main problem with merges is that they aren't unique. This isn't a huge
+problem by itself: lots of great things aren't unique. The problem is that we
+usually want to merge automatically, and an automatic system needs an
+unambiguous answer. Eventually, we'll deal with this by defining a special
+class of merges (called perfect merges) which will be unique. Before that,
+we'll explore the problem with some examples.
+
 ## A silly example
 
-The main problem with merges are that they aren't unique: let's start with a silly
-example:
+Let's start with a silly example, in which our merge tool decides to
+add some extra nonsense:
 
 ```tikz
 FILE (0, 0) original
@@ -376,9 +409,9 @@ c2 d3
 c3 d4
 ```
 
-No merge tool would ever do that, of course, but it's still a valid
+No sane merge tool would ever do that, of course, but it's still a valid
 merge according to our rule in the last section. Clearly, we'll have
-to tighten up the rules.
+to tighten up the rules to exclude this case.
 
 ## A serious example
 
@@ -434,7 +467,7 @@ merge should have.
 
 # Perfect merges
 
-Finally, I'm ready to define the ideal merge. The main idea behind the
+The main idea behind the
 definition I'm about to give is that it will never cause any regrets. That is,
 no matter what happens in the future, we can always represent the history just
 as well through the merge as we could using the original branches. Obviously,
@@ -480,7 +513,8 @@ We say that the merge `(r, s)` is a *perfect merge* if for *every* possible
 choice of the merge `(u, v)`, there is a unique patch `w` so that `u = rw`
 and `v = sw`. (In math terms, the diagram commutes.)
 We're going to call `w` a *continuation*, since it tells us how to continue
-working from the merged file.
+working from the merged file. To repeat, a merge is perfect if for every
+possible future, there is a unique continuation.
 
 
 ## A perfect merge
@@ -567,10 +601,9 @@ c2 d3
 c3 d4
 ```
 
-This turns out (surprise, surprise) not to be a perfect merge; the reason is
-that our definition of perfection required that there is always a *unique* continuation.
-
-But here is an example of a possible future without a unique continuation:
+This turns out (surprise, surprise) not to be a perfect merge.
+To understand how our definition of merge perfection excludes merges like this,
+here is an example of a possible future without a continuation:
 
 ```tikz
 FILE (0, 0) original
@@ -599,7 +632,6 @@ to-do list
 * put on socks
 * put on shoes
 * take out garbage
-* do the hokey pokey
 
 EDGES
 a1 b1
@@ -620,56 +652,8 @@ c2 e3
 c3 e4
 ```
 
-(That's right: the patches leading to `future` are exactly the same as the
-patches leading to `merged`.) Now there are two possible patches between
-`merged` and `future` that will both result in a commuting diagram:
-
-```tikz
-FILE (0, 0) merged
-to-do list
-* put on socks
-* put on shoes
-* take out garbage
-* do the hokey pokey
-
-FILE (50, 0) future
-to-do list
-* put on socks
-* put on shoes
-* take out garbage
-* do the hokey pokey
-
-EDGES
-a1 b1
-a2 b2
-a3 b3
-a4 b4
-```
-
-and
-
-```tikz
-FILE (0, 0) merged
-to-do list
-* put on socks
-* put on shoes
-* take out garbage
-* do the hokey pokey
-
-FILE (50, 0) future
-to-do list
-* put on socks
-* put on shoes
-* take out garbage
-* do the hokey pokey
-
-EDGES
-a1 b1
-a2 b2
-a3 b3
-a4 b4
-a5 b5
-```
+Since our patches can't delete lines, there's no way to get from `merged`
+to `future`.
 
 ## A serious example
 
@@ -741,10 +725,8 @@ c2 e3
 ````
 
 Now what patch (call it `w`) could be put between `merged` and `future` to make
-everything commute? Well, from the patch between `mine` and `future`,
-you see that the shoes are preserved; that means that `w` has to keep the shoes line.
-Looking at the patch between `wife's` and `future`, the same logic implies that
-`w` has to keep the garbage line. Then the only possibility for `w` is
+everything commute?
+The only possibility is
 
 ```tikz
 FILE (100, 0) merged
@@ -763,9 +745,7 @@ a2 b3
 a3 b2
 ```
 
-which isn't a legal patch because patches aren't allowed to swap lines. To
-summarize, the merge we were considering isn't perfect because we gave an
-example of a future which had no continuation.
+which isn't a legal patch because patches aren't allowed to swap lines.
 
 ## Terminological remarks
 
@@ -799,7 +779,7 @@ For most of this article, we'll ignore the general math terminology in favor
 of language that's more intuitive and specific to files and patches.
 
 
-# Conflicts and dagles
+# Conflicts and digles
 
 The main problem with perfect merges is that they don't always exist. In fact,
 we already saw an example:
@@ -839,14 +819,14 @@ generalize files so that every pair of patches of generalized files can be
 perfectly merged. The miraculous part here is that in this particular case,
 the abstract nonsense condenses into something completely explicit and manageable.
 
-## Dagles
+## Digles
 
-A file is an ordered list of lines. A *dagle* (for **d**irected **a**cyclic
-**g**raph fi**le**) is a directed acyclic graph of lines. (Yes, I know it's
+A file is an ordered list of lines. A *digle* (for **di**rected
+**g**raph fi**le**) is a directed graph of lines. (Yes, I know it's
 a terrible name, but it's better than "object in the free finite cocompletion
 of the category of files and patches," which is what the paper calls it.)
-In other words, whereas a file insists on having its lines in a strict order,
-a dagle allows lines to be partially ordered. It's pretty easy to see how relaxing
+In other words, whereas a file insists on having its lines in a strict linear order,
+a digle allows them to be any directed graph. It's pretty easy to see how relaxing
 the strict ordering of lines solves our earlier merging issues.
 For example, here's a perfect merge of the sort that caused us problems before:
 
@@ -887,14 +867,16 @@ c3 d4
 In retrospect, this is a pretty obvious solution: if we don't know what order
 shoes and garbage should go in, we should just produce an output that doesn't
 specify the order. What's a bit less obvious (but is proved in the paper)
-is that when we work in the world of dagles instead of the world of files,
+is that when we work in the world of digles instead of the world of files,
 *every* pair of patches has a unique perfect merge. What's even cooler is
 that the perfect merge is easy to compute. I'll describe it in a second,
-but first I have to say how patches generalize to dagles.
+but first I have to say how patches generalize to digles.
 
-A patch between two dagles (say, `A` and `B`) is a partial function
-(call it `p`) from the lines of `A` to the lines of `B` that respects
-the partial order, in the sense that if `x < y` in `A` then `p(x) < p(y)` in `B`.
+A patch between two digles (say, `A` and `B`) is a function (call it `p`) from
+the lines of `A` to the lines of `B` that respects the partial order, in the
+sense that if there is a path from `x` to `y` in `A` then there is a path from
+`p(x)` to `p(y)` in `B`. (This condition is an extension of the fact that
+a patch between two files isn't allowed to change the order.)
 Here's an example:
 
 ```tikz
@@ -919,11 +901,13 @@ a3 b4
 a4 b6
 ```
 
+## The perfect merge
+
 And now for the merge algorithm: let's say we have a patch `p` going from the
-dagle `A` to the dagle `B` and another patch `q` going from `A` to `C`. To
+digle `A` to the digle `B` and another patch `q` going from `A` to `C`. To
 compute the perfect merge of `p` and `q`,
 
-1. write down the dagles `B` and `C` next to each other, and then
+1. write down the digles `B` and `C` next to each other, and then
 2. whenever a line in `B` and a line in `C` share a "parent" in `A`, collapse them into a single line.
 
 That's it: two steps. Here's the algorithm at work on our previous example: we
@@ -1011,12 +995,12 @@ b2 c3
 b3 c4
 ```
 
-## But how do I work with a dagle?
+## Working with digles.
 
-By generalizing files to dagles, we got a very nice benefit: every pair of
+By generalizing files to digles, we got a very nice benefit: every pair of
 patches has a (unique) perfect merge, and we can compute it easily. But
 there's an obvious flaw: all the tools that we use (editors, compilers, etc.)
-work on files, not dagles. This is where the
+work on files, not digles. This is where the
 [paper](https://arxiv.org/abs/1311.3903) leaves us, but there is an easy solution:
 whenever a merge results in something that isn't a file, just make
 a new patch that turns it into a file. We'll call this *flattening*,
@@ -1067,7 +1051,7 @@ d3 e3
 d4 e4
 ```
 
-## But how is that new?
+## That looks like a merge conflict!
 
 If your eyes haven't glazed over by now (sorry, it's been a long post), you
 might be feeling a bit cheated: I promised you a new framework that avoids the
@@ -1077,5 +1061,120 @@ post, where I demonstrate the `pijul` tool and how it differs from `git`. But
 here's a little teaser: the difference between flattening and manual merge
 resolution is that flattening is completely transparent to the VCS: it's just
 a patch like any other. That means we can do fun things, like re-ordering or
-reverting patches, even in the presence of conflicting merges. But more on that
+reverting patches, even in the presence of conflicting merges. More on that
 in the next post.
+
+# Deleting lines
+
+It's time to finally address something I put off way at the beginning of the
+post: the system I described was based on patches that can't delete lines, and
+we obviously need to allow deletions in any practical system. Unfortunately,
+the paper doesn't help here: it claims that you can incorporate deletion into
+the system I described without really changing anything, but there's a bug in
+the paper. Specifically, if you tweak the definitions to allow deletion then
+the category of digles turns out not to be closed under pushouts any more.
+Here's an example where the merge algorithm in the paper turns out not to be
+perfect:
+
+```tikz
+DAGLE (0, 0) original
+PARENT 0 POS 1/1 three
+PARENT 0 POS 2/1 unordered
+PARENT 0 POS 3/1 lines
+
+DAGLE (40, 20) branch1
+PARENT 0 POS 1/1 three
+PARENT 1 POS 2/1 unordered
+PARENT 0 POS 3/1 lines
+
+DAGLE (40, -20) branch2
+PARENT 0 POS 1/1 three
+PARENT 0 POS 2/1 unordered
+PARENT 2 POS 3/1 lines
+
+DAGLE (80, 0) perfect?
+PARENT 0 POS 1/1 three
+PARENT 1 POS 2/1 unordered
+PARENT 2 POS 3/1 lines
+
+DAGLE (150, 0) future
+PARENT 0 POS 1/1 three
+PARENT 0 POS 2/1 lines
+
+EDGES
+a1 b1
+a2 b2
+a3 b3
+a1 c1
+a2 c2
+a3 c3
+b1 d1
+b2 d2
+b3 d3
+c1 d1
+c2 d2
+c3 d3
+b1 e1
+b3 e2
+c1 e1
+c3 e2
+```
+
+(Since this post has dragged on long enough, I'll leave it as an exercise to
+figure out what the problem is).
+
+## Ghost lines
+
+Fortunately, there's a trick to emulate line deletion in our original patch
+system. I got this idea from pijul, but I'll present it in a slightly
+different way. The idea is to allow "ghost" lines instead of actually deleting
+them. That is, we mark every line in our digle as either "live" or "ghost."
+Then we add one extra rule to our patches: a live line can turn into a ghost
+line, but not the other way around. We'll draw ghost lines in gray, and arrows
+pointing to ghost lines will be dashed. Here's a patch that deletes the "shoes"
+line.
+
+```tikz
+DAGLE (0, 0)
+PARENT 0 POS 1/1 to-do
+PARENT 1 POS 2/1 * shoes
+PARENT 2 POS 3/1 * garbage
+
+DAGLE (50, 0)
+PARENT 0 POS 1/1 to-do
+PARENT 1 POS 2/1 GHOST * shoes
+PARENT 2 POS 3/1 * garbage
+
+EDGES
+a1 b1
+a2 b2 dashed
+a3 b3
+```
+
+The last remaining piece is to extend the perfect merge algorithm to cover
+our new digles with ghost lines. This turns out to be easy; here's the new
+algorithm:
+
+1. Write down side-by-side the two digles to be merged.
+2. For every pair of lines with a common parent, "collapse" them into a single line,
+  *and if one of the was a ghost, make the collapsed line a ghost*.
+
+The bit in italics is the only new part.
+
+# Conclusion
+
+I showed you (in great detail) a mathy way of thinking about patches in a VCS,
+although I haven't shown a whole lot of motivation for it yet. At the very
+least, though, next time someone starts droning on about "patch theory," you'll
+have some idea what they're talking about.
+
+In the next post, I'll talk about [pijul](pijul.com), a VCS that is loosely
+based around the algorithms I described in this post. There you'll get to see
+some (toy) examples where pijul's solid mathematical underpinnings help it to
+avoid corner cases that trip up some more established VCSes.
+
+# Acknowledgement
+
+I'd like to thank Pierre-Étienne Meunier for his comments and corrections on
+a draft of this post. Of course, any errors that remain are my own
+responsibility.

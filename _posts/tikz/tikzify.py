@@ -20,8 +20,8 @@ LINE_HEIGHT_MM = 4
 LINE_WIDTH_MM = 35
 LINE_PADDING = 2
 
-FILE_SPEC_RE = re.compile(r"(FILE|DAGLE) \(([-0-9]+), ([-0-9]+)\)\s*([a-zA-Z0-9']*)")
-DAGLE_LINE_RE = re.compile(r"PARENT ([0-9/]+) POS ([0-9/]+)\s*([a-zA-Z0-9- ><*]*)")
+FILE_SPEC_RE = re.compile(r"(FILE|DAGLE) \(([-0-9]+), ([-0-9]+)\)\s*([a-zA-Z0-9'?]*)")
+DAGLE_LINE_RE = re.compile(r"PARENT ([0-9/]+) POS ([0-9/]+)(\s*GHOST)?\s*([a-zA-Z0-9- ><*]*)")
 
 
 def write_one_file(out, lines, offset_mm, file_label, line_prefix):
@@ -59,16 +59,19 @@ def write_one_dagle(out, lines, offset_mm, file_label, line_prefix):
     line_no = 0
     for line in lines:
         line_no += 1
-        (parent_nos, pos, line_text) = re.match(DAGLE_LINE_RE, line).group(1, 2, 3)
+        (parent_nos, pos, ghost, line_text) = re.match(DAGLE_LINE_RE, line).group(1, 2, 3, 4)
         parent_nos = [int(n) for n in parent_nos.split('/')]
         [row_no, col_no] = [int(n) for n in pos.split('/')]
         max_horiz = max(max_horiz, col_no)
         num_vert_lines = max(num_vert_lines, row_no)
+        color = "black"
+        if ghost is not None:
+            color = "gray"
 
         x_pos = x_offset + line_width * (col_no - 1) + LINE_PADDING
         y_pos = y_offset - line_height * (row_no - 0.5)
 
-        print(r'\node({}{}) [anchor = base west, text width = {}mm] at ({}mm, {}mm) {{ \tt {} }};'.format(line_prefix, line_no, line_width, x_pos, y_pos, line_text), file=out)
+        print(r'\node({}{}) [text = {}, anchor = base west, text width = {}mm] at ({}mm, {}mm) {{ \tt {} }};'.format(line_prefix, line_no, color, line_width, x_pos, y_pos, line_text), file=out)
         for p in parent_nos:
             if p != 0:
                 print(r'\draw[-Latex] ({}{}) to ({}{});'.format(line_prefix, p, line_prefix, line_no), file=out)
@@ -99,8 +102,13 @@ def write_spec_file(out, lines):
             cur_prefix += 1
         elif mode == 'EDGES':
             for edge in cur_lines:
-                [u, v] = edge.split()
-                print(r'\draw[-Latex,thick,gray] ({}.east) to [out=0, in=180] ({}.west);'.format(u, v), file=out)
+                verts = edge.split()
+                style = ""
+                if len(verts) > 2:
+                    style = ", " + verts[2]
+                    verts = verts[:2]
+                [u, v] = verts
+                print(r'\draw[-Latex, thick, gray {}] ({}.east) to [out=0, in=180] ({}.west);'.format(style, u, v), file=out)
         elif mode == "EXTRA":
             for edge in cur_lines:
                 print(edge.strip(), file=out)
