@@ -384,7 +384,7 @@ no ambiguity with `w + x + y + z`.
 The previous paragraph is relevant to patches because perfect merging
 is associative, in the following sense: if I have multiple patches
 (let's say three to keep the diagrams manageable) then there's a unique
-way to perfectly merge the three patches together. That three-way merge
+way to perfectly merge them all together. That three-way merge
 can be written as combinations of two-way merges in multiple different
 ways, but every way that I write it gives the same result. Let's have some pictures.
 Here are my three patches:
@@ -401,8 +401,7 @@ EXTRA
 ```
 
 And here's one way I could merge them all together:
-
-1. Merge patches `p` and `q`:
+first, merge patches `p` and `q`:
 
 ```tikz
 EXTRA
@@ -418,7 +417,7 @@ EXTRA
 \draw[->] (b) -- node[above] {\tt n} ++ (m);
 ```
 
-2. Merge patches `pm` (remember, that's the patch I get from applying `p` and then `m`,
+Then, merge patches `pm` (remember, that's the patch I get from applying `p` and then `m`,
 which in the diagram above is the same as `qn`) and `r`:
 
 ```tikz
@@ -487,8 +486,8 @@ that everyone will always agree on which lines in the final file came from
 where. There isn't even anything special about the initial configuration (three
 patches coming out of a single file). I could start with an arbitrarily complex
 history, and there would be an unambiguous way to merge together all of the
-patches that it contains. In this sense, we say that the current state of
-things is determined by a set of patches; this is in contrast to most
+patches that it contains. In this sense, we can say that the current state of
+a pijul branch is determined by a set of patches; this is in contrast to most
 existing VCSes, where the order in which patches are merged also matters.
 
 ## Reordering and antiquing patches
@@ -656,7 +655,10 @@ b1 c1
 b2 c2
 ```
 
-In particular, the first patch above is a dependency of the second one.
+Since the second patch can't be made any more antique, the first patch above is
+a dependency of the second one. In my next post, I'll come back to antiquing
+(and specifically, the question of how to efficiently find the most
+antique version of a patch).
 
 I promised to talk about reordering patches, so why did I spend paragraphs
 going on about antiques? The point is that (again, because of the associative
@@ -803,7 +805,7 @@ to-do list:
 * go outside
 ```
 
-There's something else a bit funny: if we resolve the conflict and look at the
+There's something else a bit funny with git's behavior here: if we resolve the conflict and look at the
 history, there are two copies of the urgent fix, with two different hashes.
 Since git doesn't understand patch reordering like pijul does, `git
 cherry-pick` and `pijul apply` work in slightly different ways: `pijul apply`
