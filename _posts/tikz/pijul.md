@@ -223,7 +223,7 @@ to-do
 This is a perfectly good representation of the digle on the right, but it loses
 information from the one on the left (such as the fact that both "home" lines
 are the same, and the fact that "shop" and "home" don't have a prescribed
-order. The good news here is that as long as your digle came from merging two
+order). The good news here is that as long as your digle came from merging two
 *files*, then pijul's rendering is lossless. That means you can avoid the
 problem by flattening your digles to files after every merge (i.e., by
 resolving your merge conflicts immediately).
