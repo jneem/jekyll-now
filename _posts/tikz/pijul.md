@@ -702,67 +702,68 @@ version of that patch. All you'll notice is the extra flexibility it brings.
 
 We'll simulate (a toy example of) a common scenario: you're maintaining a
 long-running branch of a project that's under active development (maybe you're
-working on a large experimental feature). Occasionally, you need to incorporate
-changes from the master branch. Finally (maybe your experimental feature
+working on a large experimental feature). Occasionally, you need to
+exchange some changes with the master branch. Finally (maybe your experimental feature
 was a huge success) you want to merge everything back into master.
 
 Specifically, we're going to do the following experiment in both pijul and git.
-Will start from the initial file
+The master branch will evolve in the following sequence:
 
 ```tikz
 FILE (0, 0)
 to-do list:
 * put on shoes
-```
 
-On the master branch, we'll first commit an urgent fix:
-
-```tikz
-FILE (0, 0)
-to-do list:
-* URGENT FIX
-* put on shoes
-```
-
-and then we'll add something irrelevant:
-
-```tikz
-FILE (0, 0)
-to-do list:
-* URGENT FIX
-* irrelevant
-* put on shoes
-```
-
-In our private branch, we'll start from the same initial file,
-and we'll add something at the end:
-
-```tikz
-FILE (0, 0)
+FILE (50, 0)
 to-do list:
 * put on shoes
 * go outside
-```
 
-Then, we'll apply the urgent fix from the master branch:
-
-```tikz
-FILE (0, 0)
+FILE (100, 0)
 to-do list:
 * URGENT FIX
 * put on shoes
 * go outside
-```
 
-and finally we'll add some socks:
-
-```tikz
-FILE (0, 0)
+FILE (150, 0)
 to-do list:
 * put on socks
 * URGENT FIX
 * put on shoes
 * go outside
+
+EDGES
+a1 b1
+a2 b2
+b1 c1
+b2 c3
+b3 c4
+c1 d1
+c2 d3
+c3 d4
+c4 d5
+```
+
+On our private branch, we'll begin from the same initial file.
+We'll start by applying the urgent fix from the master branch
+(it fixed a critical bug, so we can't wait):
+
+```tikz
+FILE (0, 0)
+to-do list:
+* URGENT FIX
+* put on shoes
+```
+
+Then we'll get to implementing our fancy experimental features:
+
+```tikz
+FILE (0, 0)
+to-do list:
+* URGENT FIX
+* do the dishes
+* sweep the floor
+* put on shoes
 ```
 
 I'll leave out the (long) command listings needed to implement the steps
@@ -770,8 +771,8 @@ above in pijul and git, but let me mention the one step that we
 didn't cover before: in order to apply the urgent fix from master, we say
 
 ```
-$ pijul changes --branch master # Look for the hash of the patch you want
-$ pijul apply <hash-of-a-patch>
+$ pijul changes --branch master # Look for the patch you want
+$ pijul apply <hash-of-the-patch>
 ```
 
 In git, of course, we'll use cherry-pick.
@@ -784,7 +785,8 @@ FILE (0, 0)
 to-do list:
 * put on socks
 * URGENT FIX
-* irrelevant
+* do the dishes
+* sweep the floor
 * put on shoes
 * go outside
 ```
@@ -796,16 +798,18 @@ FILE (0, 0)
 to-do list:
 <<<<<<< HEAD
 * URGENT FIX
-* irrelevant
+* do the dishes
+* sweep the floor
 =======
 * put on socks
 * URGENT FIX
->>>>>>> branch
+>>>>>>> master
 * put on shoes
 * go outside
 ```
 
-There's something else a bit funny with git's behavior here: if we resolve the conflict and look at the
+There's something else a bit funny with git's behavior here: if we resolve the
+conflict and look at the
 history, there are two copies of the urgent fix, with two different hashes.
 Since git doesn't understand patch reordering like pijul does, `git
 cherry-pick` and `pijul apply` work in slightly different ways: `pijul apply`
@@ -821,6 +825,11 @@ slightly surprising things. (For example, by inserting an extra merge in
 the right place, you can get the conflict to go away. That's because git
 has a heuristic where if it sees two different patches doing the same
 thing, it suppresses the conflict.)
+
+Pijul, on the other hand, understood that the urgent fix could be incorporated
+into my private branch with no lossy modifications. That's
+because pijul silently antiqued the urgent fix, so that
+the divergence between the master branch and my own branch became irrelevant.
 
 # Conclusion
 
