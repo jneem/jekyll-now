@@ -293,7 +293,7 @@ d4 e4
 Then we'll ask pijul to revert the "shoes" patch:
 
 ```
-$ pijul unrecord --path=<hash-of-shoes-patch>
+$ pijul unrecord --patch=<hash-of-shoes-patch>
 $ pijul revert
 ```
 
